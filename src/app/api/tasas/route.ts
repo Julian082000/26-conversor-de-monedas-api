@@ -1,30 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDb, verificarToken } from "@/lib/firebase";
-
-export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
-  const uid = await verificarToken(req);
-  if (!uid) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-
   const base = (req.nextUrl.searchParams.get("base") || "USD").toUpperCase();
-  const hoy = new Date().toISOString().slice(0, 10);
-  const db = getDb();
-  const docRef = db.collection("tasas").doc(`${base}_${hoy}`);
-  const snap = await docRef.get();
+  try {
+    const res = await fetch(`https://open.er-api.com/v6/latest/${encodeURIComponent(base)}`, {
+      next: { revalidate: 3600 },
+    });
+    if (!res.ok) {
+      return NextResponse.json({ error: "No se pudieron obtener las tasas" }, { status: 502 });
+    }
+    const data = await res.json();
+    if (data.result !== "success" || !data.rates) {
+      return NextResponse.json({ error: "Moneda base no soportada" }, { status: 400 });
+    }
+    const fecha = data.time_last_update_utc
+      ? new Date(data.time_last_update_utc).toISOString().slice(0, 10)
+      : new Date().toISOString().slice(0, 10);
 
-  if (snap.exists) {
-    return NextResponse.json(snap.data());
+    return NextResponse.json({
+      base: data.base_code,
+      fecha,
+      valores: data.rates,
+    });
+  } catch {
+    return NextResponse.json({ error: "Error conectando con proveedor de tasas" }, { status: 502 });
   }
-
-  const extRes = await fetch(`https://api.frankfurter.dev/v1/latest?base=${base}`);
-  if (!extRes.ok) {
-    return NextResponse.json({ error: "Error consultando tasas" }, { status: 502 });
-  }
-
-  const extData = await extRes.json();
-  const payload = { base, fecha: extData.date || hoy, valores: extData.rates };
-  await docRef.set(payload);
-
-  return NextResponse.json(payload);
 }
