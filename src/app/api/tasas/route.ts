@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import { verificarToken } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
+  const usuario = await verificarToken(req);
+  if (!usuario) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
   const base = (req.nextUrl.searchParams.get("base") || "USD").toUpperCase();
   try {
-    const res = await fetch(`https://open.er-api.com/v6/latest/${encodeURIComponent(base)}`, {
-      next: { revalidate: 3600 },
-    });
+    const res = await fetch(`https://open.er-api.com/v6/latest/${encodeURIComponent(base)}`);
     if (!res.ok) {
       return NextResponse.json({ error: "No se pudieron obtener las tasas" }, { status: 502 });
     }

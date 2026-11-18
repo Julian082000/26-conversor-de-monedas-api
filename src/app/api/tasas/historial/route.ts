@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { verificarToken } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
+  const usuario = await verificarToken(req);
+  if (!usuario) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
   const base = (req.nextUrl.searchParams.get("base") || "USD").toUpperCase();
   const moneda = (req.nextUrl.searchParams.get("moneda") || "EUR").toUpperCase();
 
@@ -25,7 +31,6 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Respaldo de tendencia de 7 días para divisas no listadas en BCE (como COP)
     const actualRes = await fetch(`https://open.er-api.com/v6/latest/${encodeURIComponent(base)}`);
     const actualData = await actualRes.json();
     const tasaActual = Number(actualData?.rates?.[moneda] ?? 0);
