@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verificarToken } from "@/lib/auth";
+import { verificarToken } from "@/lib/firebase";
 
 export async function GET(req: NextRequest) {
   const usuario = await verificarToken(req);
