@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { verificarToken } from "@/lib/firebase";
 
 export const runtime = "nodejs";

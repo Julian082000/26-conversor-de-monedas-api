@@ -1,4 +1,4 @@
-﻿import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { GET as getTasas } from "../src/app/api/tasas/route";
 import { POST as postRegistro } from "../src/app/api/auth/registro/route";
